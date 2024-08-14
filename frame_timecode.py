@@ -1,0 +1,1 @@
+MAX_FPS_DELTA: float = 1.0 / 100000
