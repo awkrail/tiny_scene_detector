@@ -1,7 +1,10 @@
 import argparse
 
 from typing import Optional
+
 from video_stream import VideoStreamCv2
+from content_detector import ContentDetector
+from scene_manager import SceneManager
 
 def open_video(
     input_path: str,
@@ -14,10 +17,10 @@ def open_video(
 
 def main(input_path: str):
     video = open_video(input_path)
-    import ipdb; ipdb.set_trace()
-    # detector = ContentDetector()
-    # scene_manager = SceneManager()
-
+    detector = ContentDetector()
+    scene_manager = SceneManager(detector)
+    scene_manager.detect_scenes(video)
+    return scene_manager.get_scene_list()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

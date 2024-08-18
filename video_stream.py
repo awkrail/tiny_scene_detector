@@ -1,8 +1,9 @@
 import os
 import cv2
+import math
 
 from typing import Optional
-from frame_timecode import MAX_FPS_DELTA
+from frame_timecode import FrameTimecode, MAX_FPS_DELTA
 
 class VideoStreamCv2:
     """
@@ -17,7 +18,27 @@ class VideoStreamCv2:
             raise ValueError('Path must be specified')
         self._path = path
         self._cap: Optional[cv2.VideoCapture] = None
+        self._frame_rate: Optional[float] = framerate
+        self._num_frames = 0
         self._open_capture(framerate)
+
+    @property
+    def frame_number(self) -> int:
+        return self._num_frames
+
+    @property
+    def base_timecode(self) -> FrameTimecode:
+        return FrameTimecode(timecode=0, fps=self._frame_rate)
+
+    @property
+    def position(self) -> FrameTimecode:
+        if self.frame_number < 1:
+            return self.base_timecode
+        return self.base_timecode + (self.frame_number - 1)
+
+    @property
+    def duration(self) -> Optional[FrameTimecode]:
+        return self.base_timecode + math.trunc(self._cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     def _open_capture(
             self,
