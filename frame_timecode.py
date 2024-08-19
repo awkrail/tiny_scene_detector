@@ -17,13 +17,13 @@ class FrameTimecode:
         self._frame_num = None
 
         if isinstance(timecode, FrameTimecode):
-            self._framerate = timecode.framerate
-            self.frame_num = timecode.frame_num
+            self._framerate = timecode._framerate
+            self._frame_num = timecode._frame_num
             if fps is not None:
                 raise TypeError('Framerate cannot be overwritten when copying a FrameTimecode.')
         else:
             if isinstance(fps, FrameTimecode):
-                fps  = fps.framerate
+                fps  = fps._framerate
             
             if not isinstance(fps, (int, float)):
                 raise TypeError('Framerate must be of type int/float.')
@@ -41,10 +41,18 @@ class FrameTimecode:
     @property
     def framerate(self) -> float:
         return self._framerate
+
+    @framerate.setter
+    def framerate(self, value: float):
+        self._framerate = value
     
     @property
     def frame_num(self) -> int:
         return self._frame_num
+    
+    @frame_num.setter
+    def frame_num(self, value: int):
+        self._frame_num = value
     
     @property
     def seconds(self) -> float:

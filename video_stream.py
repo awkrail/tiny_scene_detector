@@ -2,7 +2,7 @@ import os
 import cv2
 import math
 
-from typing import Optional
+from typing import Optional, Tuple
 from frame_timecode import FrameTimecode, MAX_FPS_DELTA
 
 class VideoStreamCv2:
@@ -25,6 +25,15 @@ class VideoStreamCv2:
     @property
     def frame_number(self) -> int:
         return self._num_frames
+    
+    @property
+    def frame_rate(self) -> float:
+        return self._cap.framerate
+    
+    @property
+    def frame_size(self) -> Tuple[int, int]:
+        return (math.trunc(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                math.trunc(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
 
     @property
     def base_timecode(self) -> FrameTimecode:
