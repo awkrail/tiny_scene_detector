@@ -1,8 +1,9 @@
 import os
 import cv2
 import math
+import numpy as np
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 from frame_timecode import FrameTimecode, MAX_FPS_DELTA
 
 class VideoStreamCv2:
@@ -72,3 +73,32 @@ class VideoStreamCv2:
             
         self._cap = cap
         self._frame_rate = framerate
+    
+    def read(self, decode: bool = True, advance: bool = True) -> Union[np.ndarray, bool]:
+        """
+        Read and decode the next frame as a np.ndarray.
+        """
+        if not self._cap.isOpened():
+            return False
+        
+        if advance:
+            has_grabbed = self._cap.grab()
+            if not has_grabbed:
+                if self.duration > 0 and self.position < (self.duration - 1):
+                    # Re-try a few times if required
+                    for _ in range(self._max_decode_attempts):
+                        has_grabbed = self._cap.grab()
+                        if has_grabbed:
+                            break
+            
+            if not has_grabbed:
+                return False
+            self._has_grabbed = True
+
+        if decode and self._has_grabbed:
+            _, frame = self._cap.retrieve()
+            return frame
+
+        return self._has_grabbed
+        
+            

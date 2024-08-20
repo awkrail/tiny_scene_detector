@@ -24,6 +24,8 @@ class SceneManager:
     ):
         self._detector: ContentDetector = detector
         self._frame_size: Tuple[int, int] = None
+        self._start_pos: FrameTimecode = None
+        self._last_pos: FrameTimecode = None
         self._base_timecode: Optional[FrameTimecode] = None
         self._stop = threading.Event()
 
@@ -37,7 +39,6 @@ class SceneManager:
         self._base_timecode = video.base_timecode
         total_frames = video.duration.frame_num
         downscale_factor = compute_downscale_factor(video.frame_size[0])
-        import ipdb; ipdb.set_trace()
 
         frame_queue = queue.Queue(MAX_FRAME_QUEUE_LENGTH)
         self._stop.clear()
@@ -46,6 +47,7 @@ class SceneManager:
             args=(self, video, downscale_factor, frame_queue)
         )
         decoder_thread.start()
+        import ipdb; ipdb.set_trace()
 
     def _decode_thread(
         self,
@@ -55,7 +57,8 @@ class SceneManager:
     ):
         while not self._stop.is_set():
             frame_im = video.read()
-            if not frame_im:
+
+            if frame_im is False:
                 break
 
             decoded_size = (frame_im.shape[1], frame_im.shape[0])
