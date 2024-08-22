@@ -1,8 +1,9 @@
 import queue
 import threading
 import cv2
+import numpy as np
 
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Callable
 
 from content_detector import ContentDetector
 from video_stream import VideoStreamCv2
@@ -28,10 +29,13 @@ class SceneManager:
         self._last_pos: FrameTimecode = None
         self._base_timecode: Optional[FrameTimecode] = None
         self._stop = threading.Event()
+        self._frame_buffer = []
+        self._frame_buffer_size = 0
+        self._cutting_list = []
 
     def detect_scenes(
         self,
-        video: VideoStreamCv2
+        video: VideoStreamCv2,
     ):
         if video is None:
             raise TypeError("detect_scenes() missing 1 required positional argument: 'video'")
@@ -47,7 +51,37 @@ class SceneManager:
             args=(self, video, downscale_factor, frame_queue)
         )
         decoder_thread.start()
-        import ipdb; ipdb.set_trace()
+        frame_im = None        
+
+        while not self._stop.is_set():
+            next_frame, position = frame_queue.get()
+            if next_frame is None and position is None:
+                break
+            if not next_frame is None:
+                frame_im = next_frame
+            
+            new_cuts = self._process_frame(position.frame_num, frame_im)
+
+        while not frame_queue.empty():
+            frame_queue.get_nowait()
+        decoder_thread.join()
+
+        self._last_pos = video.position
+        self._post_process(video.position.frame_num)
+        return video.frame_number
+
+    def _process_frame(
+        self,
+        frame_num: int,
+        frame_im: np.ndarray,
+    ) -> bool:
+        new_cuts = False
+        self._frame_buffer.append(frame_im)
+        self._frame_buffer = self._frame_buffer[-(self._frame_buffer_size + 1):]
+        cuts = self._detector.process_frame(frame_num, frame_im)
+        self._cutting_list += cuts
+        new_cuts = True if cuts else False
+        return new_cuts
 
     def _decode_thread(
         self,
