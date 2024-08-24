@@ -20,7 +20,7 @@ def main(input_path: str):
     detector = ContentDetector()
     scene_manager = SceneManager(detector)
     scene_manager.detect_scenes(video)
-    return scene_manager.get_scene_list()
+    scene_list = scene_manager.get_scene_list()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

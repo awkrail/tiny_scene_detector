@@ -3,7 +3,7 @@ import threading
 import cv2
 import numpy as np
 
-from typing import Tuple, Optional, Callable
+from typing import Tuple, Optional, List, Iterable, Union
 
 from content_detector import ContentDetector
 from video_stream import VideoStreamCv2
@@ -12,11 +12,31 @@ from frame_timecode import FrameTimecode
 DEFAULT_MIN_WIDTH: int = 256
 MAX_FRAME_QUEUE_LENGTH: int = 4
 
-def compute_downscale_factor(frame_width: int, effective_width: int = DEFAULT_MIN_WIDTH) -> int:
+def compute_downscale_factor(
+    frame_width: int,
+    effective_width: int = DEFAULT_MIN_WIDTH) -> int:
     if frame_width < effective_width:
         return 1
     return frame_width // effective_width
 
+def get_scenes_from_cuts(
+    cut_list: Iterable[FrameTimecode],
+    start_pos: Union[int, FrameTimecode],
+    end_pos: Union[int, FrameTimecode],
+    ) -> List[Tuple[FrameTimecode, FrameTimecode]]:
+    
+    scene_list = []
+    if not cut_list:
+        scene_list.append((start_pos, end_pos))
+        return scene_list
+    
+    last_cut = start_pos
+    for cut in cut_list:
+        scene_list.append((last_cut, cut))
+        last_cut = cut
+
+    scene_list.append((last_cut, end_pos))
+    return scene_list
 
 class SceneManager:
     def __init__(
@@ -67,8 +87,27 @@ class SceneManager:
         decoder_thread.join()
 
         self._last_pos = video.position
-        self._post_process(video.position.frame_num)
         return video.frame_number
+
+    def get_scene_list(
+        self,
+        start_in_scene: bool = False
+        ) -> List[Tuple[FrameTimecode, FrameTimecode]]:
+        if self._base_timecode is None:
+            return []       
+        cut_list = self._get_cutting_list()
+        scene_list = get_scenes_from_cuts(cut_list=cut_list, 
+            start_pos=self._start_pos, end_pos=self._last_pos + 1)
+
+        if not cut_list and not start_in_scene:
+            scene_list = []
+
+        return sorted(scene_list)
+
+    def _get_cutting_list(self) -> List[int]:
+        if not self._cutting_list:
+            return []
+        return [self._base_timecode + cut for cut in sorted(set(self._cutting_list))]
 
     def _process_frame(
         self,
