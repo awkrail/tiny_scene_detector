@@ -20,12 +20,11 @@ class VideoStreamCv2:
         self._path = path
         self._cap: Optional[cv2.VideoCapture] = None
         self._frame_rate: Optional[float] = framerate
-        self._num_frames = 0
         self._open_capture(framerate)
 
     @property
     def frame_number(self) -> int:
-        return self._num_frames
+        return math.trunc(self._cap.get(cv2.CAP_PROP_POS_FRAMES))
     
     @property
     def frame_rate(self) -> float:

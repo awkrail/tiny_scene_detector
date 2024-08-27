@@ -21,6 +21,7 @@ def main(input_path: str):
     scene_manager = SceneManager(detector)
     scene_manager.detect_scenes(video)
     scene_list = scene_manager.get_scene_list()
+    import ipdb; ipdb.set_trace()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

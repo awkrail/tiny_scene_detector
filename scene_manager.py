@@ -80,7 +80,7 @@ class SceneManager:
             if not next_frame is None:
                 frame_im = next_frame
             
-            new_cuts = self._process_frame(position.frame_num, frame_im)
+            self._process_frame(position.frame_num, frame_im)
 
         while not frame_queue.empty():
             frame_queue.get_nowait()
